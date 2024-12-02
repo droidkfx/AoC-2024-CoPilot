@@ -12,3 +12,7 @@ I am using Jetbrains Goland with the integrated copilot plugin. I have suggestio
 As I understand it the copilot plugin will gather context from the project so I will strive to commit at each prompting to ensure the given context is clear.
 
 I will start a new conversation for every problem but will reuse the conversation within a given day.
+
+I will instruct the LLM to use "input.txt" for input files but I will modify this with the correct directory after. I will not include the input in the problem till after the prompt so I can ensure the input file is not part of the context.
+
+If CoPilot fails to solve the first part of the problem I will not include a second part.
