@@ -1,0 +1,259 @@
+Please write the code that will solve the following problem from advent of code 2024. It should read from a file called "input.txt" located in the same direcotory. It should print the answer along with the time it took to execute.
+
+There's just one problem: by holding the two lists up side by side (your puzzle input), it quickly becomes clear that the lists aren't very similar. Maybe you can help The Historians reconcile their lists?
+
+For example:
+
+3   4
+4   3
+2   5
+1   3
+3   9
+3   3
+Maybe the lists are only off by a small amount! To find out, pair up the numbers and measure how far apart they are. Pair up the smallest number in the left list with the smallest number in the right list, then the second-smallest left number with the second-smallest right number, and so on.
+
+Within each pair, figure out how far apart the two numbers are; you'll need to add up all of those distances. For example, if you pair up a 3 from the left list with a 7 from the right list, the distance apart is 4; if you pair up a 9 with a 3, the distance apart is 6.
+
+In the example list above, the pairs and distances would be as follows:
+
+The smallest number in the left list is 1, and the smallest number in the right list is 3. The distance between them is 2.
+The second-smallest number in the left list is 2, and the second-smallest number in the right list is another 3. The distance between them is 1.
+The third-smallest number in both lists is 3, so the distance between them is 0.
+The next numbers to pair up are 3 and 4, a distance of 1.
+The fifth-smallest numbers in each list are 3 and 5, a distance of 2.
+Finally, the largest number in the left list is 4, while the largest number in the right list is 9; these are a distance 5 apart.
+To find the total distance between the left list and the right list, add up the distances between all of the pairs you found. In the example above, this is 2 + 1 + 0 + 1 + 2 + 5, a total distance of 11!
+
+Your actual left and right lists contain many location IDs. What is the total distance between your lists?
+
+---
+
+To solve this problem, we need to read the input from a file called `input.txt`, parse the two lists, and then calculate the total distance between the paired elements of the lists. We will also measure the time it takes to execute the solution.
+
+Here is the Go code to achieve this:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Open the input file
+	file, err := os.Open("input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	var leftList, rightList []int
+
+	// Read the file line by line
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Fields(line)
+		if len(parts) != 2 {
+			fmt.Println("Invalid input format")
+			return
+		}
+
+		leftNum, err := strconv.Atoi(parts[0])
+		if err != nil {
+			fmt.Println("Error parsing number:", err)
+			return
+		}
+		rightNum, err := strconv.Atoi(parts[1])
+		if err != nil {
+			fmt.Println("Error parsing number:", err)
+			return
+		}
+
+		leftList = append(leftList, leftNum)
+		rightList = append(rightList, rightNum)
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Sort both lists
+	sort.Ints(leftList)
+	sort.Ints(rightList)
+
+	// Calculate the total distance
+	totalDistance := 0
+	for i := 0; i < len(leftList); i++ {
+		distance := abs(leftList[i] - rightList[i])
+		totalDistance += distance
+	}
+
+	// Print the result and the time taken
+	fmt.Printf("Total distance: %d\n", totalDistance)
+	fmt.Printf("Time taken: %s\n", time.Since(start))
+}
+
+// Helper function to calculate the absolute value
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+```
+
+This code does the following:
+1. Opens and reads the `input.txt` file.
+2. Parses the input into two lists of integers.
+3. Sorts both lists.
+4. Calculates the total distance between the paired elements of the lists.
+5. Prints the total distance and the time taken to execute the program.
+
+---
+
+There is a second part to the problem please modify the original to solve part 2:
+
+Your analysis only confirmed what everyone feared: the two lists of location IDs are indeed very different.
+
+Or are they?
+
+The Historians can't agree on which group made the mistakes or how to read most of the Chief's handwriting, but in the commotion you notice an interesting detail: a lot of location IDs appear in both lists! Maybe the other numbers aren't location IDs at all but rather misinterpreted handwriting.
+
+This time, you'll need to figure out exactly how often each number from the left list appears in the right list. Calculate a total similarity score by adding up each number in the left list after multiplying it by the number of times that number appears in the right list.
+
+Here are the same example lists again:
+
+3   4
+4   3
+2   5
+1   3
+3   9
+3   3
+For these example lists, here is the process of finding the similarity score:
+
+The first number in the left list is 3. It appears in the right list three times, so the similarity score increases by 3 * 3 = 9.
+The second number in the left list is 4. It appears in the right list once, so the similarity score increases by 4 * 1 = 4.
+The third number in the left list is 2. It does not appear in the right list, so the similarity score does not increase (2 * 0 = 0).
+The fourth number, 1, also does not appear in the right list.
+The fifth number, 3, appears in the right list three times; the similarity score increases by 9.
+The last number, 3, appears in the right list three times; the similarity score again increases by 9.
+So, for these example lists, the similarity score at the end of this process is 31 (9 + 4 + 0 + 0 + 9 + 9).
+
+Once again consider your left and right lists. What is their similarity score?
+
+---
+
+To solve the second part of the problem, we need to calculate the similarity score by counting how often each number from the left list appears in the right list and then summing up the products of each number and its count.
+
+Here is the modified Go code to achieve this:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Open the input file
+	file, err := os.Open("./1/input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	var leftList, rightList []int
+
+	// Read the file line by line
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Fields(line)
+		if len(parts) != 2 {
+			fmt.Println("Invalid input format")
+			return
+		}
+
+		leftNum, err := strconv.Atoi(parts[0])
+		if err != nil {
+			fmt.Println("Error parsing number:", err)
+			return
+		}
+		rightNum, err := strconv.Atoi(parts[1])
+		if err != nil {
+			fmt.Println("Error parsing number:", err)
+			return
+		}
+
+		leftList = append(leftList, leftNum)
+		rightList = append(rightList, rightNum)
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Sort both lists
+	sort.Ints(leftList)
+	sort.Ints(rightList)
+
+	// Calculate the total distance
+	totalDistance := 0
+	for i := 0; i < len(leftList); i++ {
+		distance := abs(leftList[i] - rightList[i])
+		totalDistance += distance
+	}
+
+	// Calculate the similarity score
+	similarityScore := 0
+	rightCount := make(map[int]int)
+	for _, num := range rightList {
+		rightCount[num]++
+	}
+
+	for _, num := range leftList {
+		similarityScore += num * rightCount[num]
+	}
+
+	// Print the results and the time taken
+	fmt.Printf("Total distance: %d\n", totalDistance)
+	fmt.Printf("Similarity score: %d\n", similarityScore)
+	fmt.Printf("Time taken: %s\n", time.Since(start))
+}
+
+// Helper function to calculate the absolute value
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+```
+
+This code does the following:
+1. Reads the input from `input.txt` and parses it into two lists of integers.
+2. Sorts both lists.
+3. Calculates the total distance between the paired elements of the lists.
+4. Calculates the similarity score by counting the occurrences of each number in the right list and summing the products of each number in the left list and its count in the right list.
+5. Prints the total distance, similarity score, and the time taken to execute the program.
