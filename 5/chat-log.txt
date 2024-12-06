@@ -1,0 +1,695 @@
+Please write the code that will solve the following problem from advent of code 2024. It should read from a file called "input.txt" located in the same direcotory. It should print the answer along with the time it took to execute.
+
+Satisfied with their search on Ceres, the squadron of scholars suggests subsequently scanning the stationery stacks of sub-basement 17.
+
+The North Pole printing department is busier than ever this close to Christmas, and while The Historians continue their search of this historically significant facility, an Elf operating a very familiar printer beckons you over.
+
+The Elf must recognize you, because they waste no time explaining that the new sleigh launch safety manual updates won't print correctly. Failure to update the safety manuals would be dire indeed, so you offer your services.
+
+Safety protocols clearly indicate that new pages for the safety manuals must be printed in a very specific order. The notation X|Y means that if both page number X and page number Y are to be produced as part of an update, page number X must be printed at some point before page number Y.
+
+The Elf has for you both the page ordering rules and the pages to produce in each update (your puzzle input), but can't figure out whether each update has the pages in the right order.
+
+For example:
+
+47|53
+97|13
+97|61
+97|47
+75|29
+61|13
+75|53
+29|13
+97|29
+53|29
+61|53
+97|53
+61|29
+47|13
+75|47
+97|75
+47|61
+75|61
+47|29
+75|13
+53|13
+
+75,47,61,53,29
+97,61,53,29,13
+75,29,13
+75,97,47,61,53
+61,13,29
+97,13,75,29,47
+The first section specifies the page ordering rules, one per line. The first rule, 47|53, means that if an update includes both page number 47 and page number 53, then page number 47 must be printed at some point before page number 53. (47 doesn't necessarily need to be immediately before 53; other pages are allowed to be between them.)
+
+The second section specifies the page numbers of each update. Because most safety manuals are different, the pages needed in the updates are different too. The first update, 75,47,61,53,29, means that the update consists of page numbers 75, 47, 61, 53, and 29.
+
+To get the printers going as soon as possible, start by identifying which updates are already in the right order.
+
+In the above example, the first update (75,47,61,53,29) is in the right order:
+
+75 is correctly first because there are rules that put each other page after it: 75|47, 75|61, 75|53, and 75|29.
+47 is correctly second because 75 must be before it (75|47) and every other page must be after it according to 47|61, 47|53, and 47|29.
+61 is correctly in the middle because 75 and 47 are before it (75|61 and 47|61) and 53 and 29 are after it (61|53 and 61|29).
+53 is correctly fourth because it is before page number 29 (53|29).
+29 is the only page left and so is correctly last.
+Because the first update does not include some page numbers, the ordering rules involving those missing page numbers are ignored.
+
+The second and third updates are also in the correct order according to the rules. Like the first update, they also do not include every page number, and so only some of the ordering rules apply - within each update, the ordering rules that involve missing page numbers are not used.
+
+The fourth update, 75,97,47,61,53, is not in the correct order: it would print 75 before 97, which violates the rule 97|75.
+
+The fifth update, 61,13,29, is also not in the correct order, since it breaks the rule 29|13.
+
+The last update, 97,13,75,29,47, is not in the correct order due to breaking several rules.
+
+For some reason, the Elves also need to know the middle page number of each update being printed. Because you are currently only printing the correctly-ordered updates, you will need to find the middle page number of each correctly-ordered update. In the above example, the correctly-ordered updates are:
+
+75,47,61,53,29
+97,61,53,29,13
+75,29,13
+These have middle page numbers of 61, 53, and 29 respectively. Adding these page numbers together gives 143.
+
+Of course, you'll need to be careful: the actual list of page ordering rules is bigger and more complicated than the above example.
+
+Determine which updates are already in the correct order. What do you get if you add up the middle page number from those correctly-ordered updates?
+
+---
+
+To solve this problem, we need to:
+
+1. Parse the input file to extract the page ordering rules and the updates.
+2. Check each update to see if it follows the given ordering rules.
+3. Identify the middle page number of each correctly-ordered update.
+4. Sum the middle page numbers of all correctly-ordered updates.
+
+Here's the Go code to achieve this:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Read the input file
+	file, err := os.Open("input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var rules []string
+	var updates [][]int
+	isUpdateSection := false
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			isUpdateSection = true
+			continue
+		}
+		if isUpdateSection {
+			updates = append(updates, parseUpdate(line))
+		} else {
+			rules = append(rules, line)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Process the updates
+	sumOfMiddlePages := 0
+	for _, update := range updates {
+		if isCorrectOrder(update, rules) {
+			middlePage := update[len(update)/2]
+			sumOfMiddlePages += middlePage
+		}
+	}
+
+	fmt.Println("Sum of middle pages:", sumOfMiddlePages)
+	fmt.Println("Execution time:", time.Since(start))
+}
+
+func parseUpdate(line string) []int {
+	parts := strings.Split(line, ",")
+	update := make([]int, len(parts))
+	for i, part := range parts {
+		fmt.Sscanf(part, "%d", &update[i])
+	}
+	return update
+}
+
+func isCorrectOrder(update []int, rules []string) bool {
+	pageIndex := make(map[int]int)
+	for i, page := range update {
+		pageIndex[page] = i
+	}
+
+	for _, rule := range rules {
+		var x, y int
+		fmt.Sscanf(rule, "%d|%d", &x, &y)
+		xIndex, xExists := pageIndex[x]
+		yIndex, yExists := pageIndex[y]
+		if xExists && yExists && xIndex > yIndex {
+			return false
+		}
+	}
+	return true
+}
+```
+
+### Explanation:
+1. **Reading the Input File**: The input file is read line by line. The first section contains the rules, and the second section contains the updates.
+2. **Parsing Updates**: Each update is parsed into a slice of integers.
+3. **Checking Order**: For each update, we check if it follows the given rules using a map to store the index of each page in the update.
+4. **Calculating the Sum**: If an update is in the correct order, we find its middle page and add it to the sum.
+5. **Output**: Finally, we print the sum of the middle pages and the execution time.
+
+---
+
+There is a second part to the problem please modify the original to solve part 2:
+
+While the Elves get to work printing the correctly-ordered updates, you have a little time to fix the rest of them.
+
+For each of the incorrectly-ordered updates, use the page ordering rules to put the page numbers in the right order. For the above example, here are the three incorrectly-ordered updates and their correct orderings:
+
+75,97,47,61,53 becomes 97,75,47,61,53.
+61,13,29 becomes 61,29,13.
+97,13,75,29,47 becomes 97,75,47,29,13.
+After taking only the incorrectly-ordered updates and ordering them correctly, their middle page numbers are 47, 29, and 47. Adding these together produces 123.
+
+Find the updates which are not in the correct order. What do you get if you add up the middle page numbers after correctly ordering just those updates?
+
+---
+
+To solve the second part of the problem, we need to:
+
+1. Identify the updates that are not in the correct order.
+2. Correctly order these updates using the page ordering rules.
+3. Identify the middle page number of each correctly-ordered update.
+4. Sum the middle page numbers of all correctly-ordered updates.
+
+Here's the modified Go code to achieve this:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Read the input file
+	file, err := os.Open("./5/input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var rules []string
+	var updates [][]int
+	isUpdateSection := false
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			isUpdateSection = true
+			continue
+		}
+		if isUpdateSection {
+			updates = append(updates, parseUpdate(line))
+		} else {
+			rules = append(rules, line)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Process the updates
+	sumOfMiddlePages := 0
+	sumOfMiddlePagesIncorrect := 0
+	for _, update := range updates {
+		if isCorrectOrder(update, rules) {
+			middlePage := update[len(update)/2]
+			sumOfMiddlePages += middlePage
+		} else {
+			correctedUpdate := correctOrder(update, rules)
+			middlePage := correctedUpdate[len(correctedUpdate)/2]
+			sumOfMiddlePagesIncorrect += middlePage
+		}
+	}
+
+	fmt.Println("Sum of middle pages of correctly ordered updates:", sumOfMiddlePages)
+	fmt.Println("Sum of middle pages of corrected updates:", sumOfMiddlePagesIncorrect)
+	fmt.Println("Execution time:", time.Since(start))
+}
+
+func parseUpdate(line string) []int {
+	parts := strings.Split(line, ",")
+	update := make([]int, len(parts))
+	for i, part := range parts {
+		fmt.Sscanf(part, "%d", &update[i])
+	}
+	return update
+}
+
+func isCorrectOrder(update []int, rules []string) bool {
+	pageIndex := make(map[int]int)
+	for i, page := range update {
+		pageIndex[page] = i
+	}
+
+	for _, rule := range rules {
+		var x, y int
+		fmt.Sscanf(rule, "%d|%d", &x, &y)
+		xIndex, xExists := pageIndex[x]
+		yIndex, yExists := pageIndex[y]
+		if xExists && yExists && xIndex > yIndex {
+			return false
+		}
+	}
+	return true
+}
+
+func correctOrder(update []int, rules []string) []int {
+	// Create a map to store the dependencies
+	dependencies := make(map[int][]int)
+	for _, rule := range rules {
+		var x, y int
+		fmt.Sscanf(rule, "%d|%d", &x, &y)
+		dependencies[y] = append(dependencies[y], x)
+	}
+
+	// Use a topological sort to order the pages correctly
+	ordered := topologicalSort(update, dependencies)
+	return ordered
+}
+
+func topologicalSort(update []int, dependencies map[int][]int) []int {
+	inDegree := make(map[int]int)
+	for _, page := range update {
+		inDegree[page] = 0
+	}
+	for _, deps := range dependencies {
+		for _, dep := range deps {
+			inDegree[dep]++
+		}
+	}
+
+	queue := []int{}
+	for page, degree := range inDegree {
+		if degree == 0 {
+			queue = append(queue, page)
+		}
+	}
+
+	ordered := []int{}
+	for len(queue) > 0 {
+		page := queue[0]
+		queue = queue[1:]
+		ordered = append(ordered, page)
+		for _, dep := range dependencies[page] {
+			inDegree[dep]--
+			if inDegree[dep] == 0 {
+				queue = append(queue, dep)
+			}
+		}
+	}
+
+	return ordered
+}
+```
+
+### Explanation:
+1. **Reading the Input File**: The input file is read line by line. The first section contains the rules, and the second section contains the updates.
+2. **Parsing Updates**: Each update is parsed into a slice of integers.
+3. **Checking Order**: For each update, we check if it follows the given rules using a map to store the index of each page in the update.
+4. **Correcting Order**: If an update is not in the correct order, we use a topological sort to reorder the pages correctly.
+5. **Calculating the Sum**: We find the middle page of each correctly-ordered update and sum them separately for the originally correct and corrected updates.
+6. **Output**: Finally, we print the sum of the middle pages for both the correctly ordered and corrected updates, along with the execution time.
+
+---
+
+The code panics when run with the following error. Can you fix it?
+
+panic: runtime error: index out of range [0] with length 0
+
+goroutine 1 [running]:
+main.main()
+	/Users/kyle.brown/GolandProjects/adventofcode-gpt/5/pt2/main.go:54 +0x5c0
+
+---
+
+The panic is likely caused by attempting to access an element in an empty slice. This can happen if the `queue` in the `topologicalSort` function is empty when trying to dequeue an element. We need to ensure that the `queue` is properly initialized and populated.
+
+Here's the corrected code:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Read the input file
+	file, err := os.Open("./5/input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var rules []string
+	var updates [][]int
+	isUpdateSection := false
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			isUpdateSection = true
+			continue
+		}
+		if isUpdateSection {
+			updates = append(updates, parseUpdate(line))
+		} else {
+			rules = append(rules, line)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Process the updates
+	sumOfMiddlePages := 0
+	sumOfMiddlePagesIncorrect := 0
+	for _, update := range updates {
+		if isCorrectOrder(update, rules) {
+			middlePage := update[len(update)/2]
+			sumOfMiddlePages += middlePage
+		} else {
+			correctedUpdate := correctOrder(update, rules)
+			middlePage := correctedUpdate[len(correctedUpdate)/2]
+			sumOfMiddlePagesIncorrect += middlePage
+		}
+	}
+
+	fmt.Println("Sum of middle pages of correctly ordered updates:", sumOfMiddlePages)
+	fmt.Println("Sum of middle pages of corrected updates:", sumOfMiddlePagesIncorrect)
+	fmt.Println("Execution time:", time.Since(start))
+}
+
+func parseUpdate(line string) []int {
+	parts := strings.Split(line, ",")
+	update := make([]int, len(parts))
+	for i, part := range parts {
+		fmt.Sscanf(part, "%d", &update[i])
+	}
+	return update
+}
+
+func isCorrectOrder(update []int, rules []string) bool {
+	pageIndex := make(map[int]int)
+	for i, page := range update {
+		pageIndex[page] = i
+	}
+
+	for _, rule := range rules {
+		var x, y int
+		fmt.Sscanf(rule, "%d|%d", &x, &y)
+		xIndex, xExists := pageIndex[x]
+		yIndex, yExists := pageIndex[y]
+		if xExists && yExists && xIndex > yIndex {
+			return false
+		}
+	}
+	return true
+}
+
+func correctOrder(update []int, rules []string) []int {
+	// Create a map to store the dependencies
+	dependencies := make(map[int][]int)
+	for _, rule := range rules {
+		var x, y int
+		fmt.Sscanf(rule, "%d|%d", &x, &y)
+		dependencies[y] = append(dependencies[y], x)
+	}
+
+	// Use a topological sort to order the pages correctly
+	ordered := topologicalSort(update, dependencies)
+	return ordered
+}
+
+func topologicalSort(update []int, dependencies map[int][]int) []int {
+	inDegree := make(map[int]int)
+	for _, page := range update {
+		inDegree[page] = 0
+	}
+	for _, deps := range dependencies {
+		for _, dep := range deps {
+			inDegree[dep]++
+		}
+	}
+
+	queue := []int{}
+	for page, degree := range inDegree {
+		if degree == 0 {
+			queue = append(queue, page)
+		}
+	}
+
+	ordered := []int{}
+	for len(queue) > 0 {
+		page := queue[0]
+		queue = queue[1:]
+		ordered = append(ordered, page)
+		for _, dep := range dependencies[page] {
+			inDegree[dep]--
+			if inDegree[dep] == 0 {
+				queue = append(queue, dep)
+			}
+		}
+	}
+
+	// Ensure the ordered list contains all pages from the update
+	pageSet := make(map[int]bool)
+	for _, page := range ordered {
+		pageSet[page] = true
+	}
+	for _, page := range update {
+		if !pageSet[page] {
+			ordered = append(ordered, page)
+		}
+	}
+
+	return ordered
+}
+```
+
+### Explanation:
+1. **Initialization of `queue`**: Ensure that the `queue` is properly initialized with pages that have an in-degree of 0.
+2. **Topological Sort**: Ensure that all pages from the update are included in the final ordered list, even if they were not part of the dependencies. This prevents the `queue` from being empty when it shouldn't be.
+
+---
+
+That's not the right answer; your answer is too low. Can you help me fix it?
+
+---
+
+The issue might be with the topological sort implementation or the way dependencies are handled. Let's ensure that the topological sort correctly orders the pages according to the rules.
+
+Here's the revised code with a more robust topological sort implementation:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Read the input file
+	file, err := os.Open("input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var rules []string
+	var updates [][]int
+	isUpdateSection := false
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			isUpdateSection = true
+			continue
+		}
+		if isUpdateSection {
+			updates = append(updates, parseUpdate(line))
+		} else {
+			rules = append(rules, line)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Process the updates
+	sumOfMiddlePages := 0
+	sumOfMiddlePagesIncorrect := 0
+	for _, update := range updates {
+		if isCorrectOrder(update, rules) {
+			middlePage := update[len(update)/2]
+			sumOfMiddlePages += middlePage
+		} else {
+			correctedUpdate := correctOrder(update, rules)
+			middlePage := correctedUpdate[len(correctedUpdate)/2]
+			sumOfMiddlePagesIncorrect += middlePage
+		}
+	}
+
+	fmt.Println("Sum of middle pages of correctly ordered updates:", sumOfMiddlePages)
+	fmt.Println("Sum of middle pages of corrected updates:", sumOfMiddlePagesIncorrect)
+	fmt.Println("Execution time:", time.Since(start))
+}
+
+func parseUpdate(line string) []int {
+	parts := strings.Split(line, ",")
+	update := make([]int, len(parts))
+	for i, part := range parts {
+		fmt.Sscanf(part, "%d", &update[i])
+	}
+	return update
+}
+
+func isCorrectOrder(update []int, rules []string) bool {
+	pageIndex := make(map[int]int)
+	for i, page := range update {
+		pageIndex[page] = i
+	}
+
+	for _, rule := range rules {
+		var x, y int
+		fmt.Sscanf(rule, "%d|%d", &x, &y)
+		xIndex, xExists := pageIndex[x]
+		yIndex, yExists := pageIndex[y]
+		if xExists && yExists && xIndex > yIndex {
+			return false
+		}
+	}
+	return true
+}
+
+func correctOrder(update []int, rules []string) []int {
+	// Create a map to store the dependencies
+	dependencies := make(map[int][]int)
+	for _, rule := range rules {
+		var x, y int
+		fmt.Sscanf(rule, "%d|%d", &x, &y)
+		dependencies[x] = append(dependencies[x], y)
+	}
+
+	// Use a topological sort to order the pages correctly
+	ordered := topologicalSort(update, dependencies)
+	return ordered
+}
+
+func topologicalSort(update []int, dependencies map[int][]int) []int {
+	inDegree := make(map[int]int)
+	for _, page := range update {
+		inDegree[page] = 0
+	}
+	for _, deps := range dependencies {
+		for _, dep := range deps {
+			inDegree[dep]++
+		}
+	}
+
+	queue := []int{}
+	for page, degree := range inDegree {
+		if degree == 0 {
+			queue = append(queue, page)
+		}
+	}
+
+	ordered := []int{}
+	for len(queue) > 0 {
+		page := queue[0]
+		queue = queue[1:]
+		ordered = append(ordered, page)
+		for _, dep := range dependencies[page] {
+			inDegree[dep]--
+			if inDegree[dep] == 0 {
+				queue = append(queue, dep)
+			}
+		}
+	}
+
+	// Ensure the ordered list contains all pages from the update
+	pageSet := make(map[int]bool)
+	for _, page := range ordered {
+		pageSet[page] = true
+	}
+	for _, page := range update {
+		if !pageSet[page] {
+			ordered = append(ordered, page)
+		}
+	}
+
+	return ordered
+}
+```
+
+### Explanation:
+1. **Dependencies Map**: The dependencies map is created to store the dependencies for each page.
+2. **Topological Sort**: The topological sort ensures that pages are ordered correctly according to the dependencies.
+3. **Queue Initialization**: The queue is initialized with pages that have an in-degree of 0.
+4. **Order Correction**: The ordered list is ensured to contain all pages from the update, even if they were not part of the dependencies.
+
+This should address the issue and provide the correct sum of middle pages for both correctly ordered and corrected updates.
+
+---
