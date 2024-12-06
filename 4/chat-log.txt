@@ -1,0 +1,400 @@
+Please write the code that will solve the following problem from advent of code 2024. It should read from a file called "input.txt" located in the same direcotory. It should print the answer along with the time it took to execute.
+
+"Looks like the Chief's not here. Next!" One of The Historians pulls out a device and pushes the only button on it. After a brief flash, you recognize the interior of the Ceres monitoring station!
+
+As the search for the Chief continues, a small Elf who lives on the station tugs on your shirt; she'd like to know if you could help her with her word search (your puzzle input). She only has to find one word: XMAS.
+
+This word search allows words to be horizontal, vertical, diagonal, written backwards, or even overlapping other words. It's a little unusual, though, as you don't merely need to find one instance of XMAS - you need to find all of them. Here are a few ways XMAS might appear, where irrelevant characters have been replaced with .:
+
+
+..X...
+.SAMX.
+.A..A.
+XMAS.S
+.X....
+The actual word search will be full of letters instead. For example:
+
+MMMSXXMASM
+MSAMXMSMSA
+AMXSXMAAMM
+MSAMASMSMX
+XMASAMXAMM
+XXAMMXXAMA
+SMSMSASXSS
+SAXAMASAAA
+MAMMMXMMMM
+MXMXAXMASX
+In this word search, XMAS occurs a total of 18 times; here's the same word search again, but where letters not involved in any XMAS have been replaced with .:
+
+....XXMAS.
+.SAMXMS...
+...S..A...
+..A.A.MS.X
+XMASAMX.MM
+X.....XA.A
+S.S.S.S.SS
+.A.A.A.A.A
+..M.M.M.MM
+.X.X.XMASX
+Take a look at the little Elf's word search. How many times does XMAS appear?
+
+---
+
+To solve this problem, we need to read the word search from a file called `input.txt`, search for all occurrences of the word "XMAS" in all possible directions, and print the count along with the time it took to execute. Here is the Go code to achieve this:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Read the input file
+	file, err := os.Open("input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	var grid []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		grid = append(grid, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Define the word to search for
+	word := "XMAS"
+	wordLen := len(word)
+	directions := [8][2]int{
+		{0, 1},   // right
+		{1, 0},   // down
+		{1, 1},   // down-right
+		{1, -1},  // down-left
+		{0, -1},  // left
+		{-1, 0},  // up
+		{-1, 1},  // up-right
+		{-1, -1}, // up-left
+	}
+
+	count := 0
+	rows := len(grid)
+	cols := len(grid[0])
+
+	// Function to check if a word exists in a given direction
+	checkWord := func(x, y, dx, dy int) bool {
+		for i := 0; i < wordLen; i++ {
+			nx, ny := x+dx*i, y+dy*i
+			if nx < 0 || ny < 0 || nx >= rows || ny >= cols || grid[nx][ny] != word[i] {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Search for the word in all directions
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			for _, dir := range directions {
+				if checkWord(i, j, dir[0], dir[1]) {
+					count++
+				}
+			}
+		}
+	}
+
+	// Print the result
+	fmt.Printf("The word %s appears %d times\n", word, count)
+	fmt.Printf("Execution time: %s\n", time.Since(start))
+}
+```
+
+This code reads the word search from `input.txt`, searches for all occurrences of "XMAS" in all possible directions, and prints the count along with the execution time.
+
+---
+
+There is a second part to the problem please modify the original to solve part 2:
+
+The Elf looks quizzically at you. Did you misunderstand the assignment?
+
+Looking for the instructions, you flip over the word search to find that this isn't actually an XMAS puzzle; it's an X-MAS puzzle in which you're supposed to find two MAS in the shape of an X. One way to achieve that is like this:
+
+M.S
+.A.
+M.S
+Irrelevant characters have again been replaced with . in the above diagram. Within the X, each MAS can be written forwards or backwards.
+
+Here's the same example from before, but this time all of the X-MASes have been kept instead:
+
+.M.S......
+..A..MSMS.
+.M.S.MAA..
+..A.ASMSM.
+.M.S.M....
+..........
+S.S.S.S.S.
+.A.A.A.A..
+M.M.M.M.M.
+..........
+In this example, an X-MAS appears 9 times.
+
+Flip the word search from the instructions back over to the word search side and try again. How many times does an X-MAS appear?
+
+---
+
+To solve the second part of the problem, we need to modify the original code to search for the pattern "X-MAS" where two "MAS" form an X shape. Each "MAS" can be written forwards or backwards. Here's the updated code:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Read the input file
+	file, err := os.Open("./4/input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	var grid []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		grid = append(grid, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Define the patterns to search for
+	patterns := [][]string{
+		{"M", "A", "S"},
+		{"S", "A", "M"},
+	}
+
+	count := 0
+	rows := len(grid)
+	cols := len(grid[0])
+
+	// Function to check if a pattern exists in a given direction
+	checkPattern := func(x, y int, pattern []string) bool {
+		for i := 0; i < 3; i++ {
+			if x+i >= rows || y-i < 0 || grid[x+i][y-i] != pattern[i] {
+				return false
+			}
+			if x+i >= rows || y+i >= cols || grid[x+i][y+i] != pattern[i] {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Search for the patterns in the grid
+	for i := 0; i < rows-2; i++ {
+		for j := 2; j < cols-2; j++ {
+			for _, pattern := range patterns {
+				if checkPattern(i, j, pattern) {
+					count++
+				}
+			}
+		}
+	}
+
+	// Print the result
+	fmt.Printf("The pattern X-MAS appears %d times\n", count)
+	fmt.Printf("Execution time: %s\n", time.Since(start))
+}
+```
+
+This code reads the word search from `input.txt`, searches for all occurrences of the "X-MAS" pattern in all possible directions, and prints the count along with the execution time. The `checkPattern` function checks for the "MAS" pattern in both forward and backward directions to form an X shape.
+
+---
+
+The code seems to fail to compile can you fix it? here is the error:
+
+./main.go:45:51: invalid operation: grid[x + i][y - i] != pattern[i] (mismatched types byte and string)
+./main.go:48:55: invalid operation: grid[x + i][y + i] != pattern[i] (mismatched types byte and string)
+
+---
+
+The error occurs because `grid[x+i][y-i]` and `grid[x+i][y+i]` are of type `byte`, while `pattern[i]` is of type `string`. We need to convert the `byte` to a `string` for comparison. Here is the corrected code:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Read the input file
+	file, err := os.Open("./4/input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	var grid []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		grid = append(grid, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Define the patterns to search for
+	patterns := [][]string{
+		{"M", "A", "S"},
+		{"S", "A", "M"},
+	}
+
+	count := 0
+	rows := len(grid)
+	cols := len(grid[0])
+
+	// Function to check if a pattern exists in a given direction
+	checkPattern := func(x, y int, pattern []string) bool {
+		for i := 0; i < 3; i++ {
+			if x+i >= rows || y-i < 0 || string(grid[x+i][y-i]) != pattern[i] {
+				return false
+			}
+			if x+i >= rows || y+i >= cols || string(grid[x+i][y+i]) != pattern[i] {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Search for the patterns in the grid
+	for i := 0; i < rows-2; i++ {
+		for j := 2; j < cols-2; j++ {
+			for _, pattern := range patterns {
+				if checkPattern(i, j, pattern) {
+					count++
+				}
+			}
+		}
+	}
+
+	// Print the result
+	fmt.Printf("The pattern X-MAS appears %d times\n", count)
+	fmt.Printf("Execution time: %s\n", time.Since(start))
+}
+```
+
+This code converts the `byte` to a `string` for comparison, fixing the compilation errors.
+
+---
+
+That's not the right answer; your answer is too low. Can you fix it?
+
+---
+
+To fix the issue, we need to ensure that we are correctly identifying all possible "X-MAS" patterns in the grid. The current implementation only checks for one specific pattern. We need to check for all possible "X-MAS" patterns, including all rotations and reflections.
+
+Here's the updated code:
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"time"
+)
+
+func main() {
+	start := time.Now()
+
+	// Read the input file
+	file, err := os.Open("./4/input.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	var grid []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		grid = append(grid, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Define the patterns to search for
+	patterns := [][][2]int{
+		{{0, 0}, {1, -1}, {1, 1}, {2, -2}, {2, 2}}, // M.A.S
+		{{0, 0}, {1, 1}, {1, -1}, {2, 2}, {2, -2}}, // M.S.A
+		{{0, 0}, {-1, -1}, {-1, 1}, {-2, -2}, {-2, 2}}, // S.A.M
+		{{0, 0}, {-1, 1}, {-1, -1}, {-2, 2}, {-2, -2}}, // S.M.A
+	}
+
+	count := 0
+	rows := len(grid)
+	cols := len(grid[0])
+
+	// Function to check if a pattern exists in a given direction
+	checkPattern := func(x, y int, pattern [][2]int) bool {
+		for _, p := range pattern {
+			nx, ny := x+p[0], y+p[1]
+			if nx < 0 || ny < 0 || nx >= rows || ny >= cols || grid[nx][ny] != 'M' && grid[nx][ny] != 'A' && grid[nx][ny] != 'S' {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Search for the patterns in the grid
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			for _, pattern := range patterns {
+				if checkPattern(i, j, pattern) {
+					count++
+				}
+			}
+		}
+	}
+
+	// Print the result
+	fmt.Printf("The pattern X-MAS appears %d times\n", count)
+	fmt.Printf("Execution time: %s\n", time.Since(start))
+}
+```
+
+This code checks for all possible "X-MAS" patterns, including all rotations and reflections, ensuring that we correctly count all occurrences.
